@@ -1,9 +1,8 @@
 """Module containing graphical widgets"""
-from abc import ABC
 import pygame
 from pygame.math import Vector2 as Vec
 
-class Widget(ABC):
+class Widget:
     """Generic component for graphical inteface"""
 
     def __init__(self, pos, size, parent_surface):
@@ -19,6 +18,12 @@ class Widget(ABC):
 
     def _update_surface(self):
         pass
+
+    def listen(self, evts):
+        """listen events
+        Args:
+            evts (list): queue of pygame.event.Event
+        """
 
     def draw(self):
         """Draw component on the screen."""
@@ -136,7 +141,7 @@ class StepperWidget(Widget):
             pygame.draw.polygon(surface, color, [
                 (0, 0), (0, rect.h-1), (rect.w-1, (rect.h-1) // 2)])
 
-    def process_events(self, evts):
+    def listen(self, evts):
         """Process pygame events on the element
            Args:
                evts: list of pygame events.
