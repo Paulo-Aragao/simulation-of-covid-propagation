@@ -9,6 +9,7 @@ from pygame.math import Vector2 as Vec
 from pygame_widgets import ButtonArray, Button
 
 from components.poi import POI
+import csv
 
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- CLASS ~-~-~-~-~-~-~-~-
@@ -65,6 +66,14 @@ class EditorState:
         ''' get available point names '''
         return list(self._available_points.keys())
 
+    def save(self):
+        ''' save state to files '''
+        with open('output/points.csv', 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow(('t', 'x', 'y'))
+            writer.writerows(([point.get_name()] + list(point.pos)
+                for point in self._points))
+
 class Editor:
     ''' Simulation map editor '''
 
@@ -76,13 +85,14 @@ class Editor:
     def _build_widgets(self):
         names = self._state.get_poi_names()
         on_clicks = [partial(
-            self._state.__class__.set_poi, self._state, name)
+            self._state.set_poi, name)
             for name in names + [None]]
         button_array = ButtonArray(screen, 100, 10, 200, 20, (len(names)+1, 1),
             border=0, texts=(names+['nenhum']),
             onClicks = on_clicks
         )
-        button_save = Button(screen, 310, 10, 60, 20, text='salvar')
+        button_save = Button(screen, 310, 10, 60, 20, text='salvar',
+            onClick=self._state.save)
         button_load = Button(screen, 380, 10, 60, 20, text='carregar')
         return [button_array, button_save, button_load]
 
