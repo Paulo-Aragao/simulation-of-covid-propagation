@@ -5,49 +5,14 @@ from functools import partial
 from typing import List
 import pygame
 from pygame.locals import QUIT
-from pygame_widgets import ButtonArray, Button
 from pygame.math import Vector2 as Vec
+from pygame_widgets import ButtonArray, Button
+
+from components.poi import POI
 
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- CLASS ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-class POI:
-    ''' Store POI's of the map '''
-
-    def __init__(self, name, color, size = None):
-        self._size: Vec = Vec(5, 5) if size is None else Vec(size)
-        self._color = color
-        self._icon = self._make_icon()
-        self._name = name
-        self.pos = (0, 0)
-
-    def _make_icon(self, ):
-        icon = pygame.Surface(self._size)
-        icon.fill(self._color)
-        return icon
-
-    def get_name(self):
-        ''' get the name of the POI '''
-        return self._name
-
-    def get_size(self):
-        ''' get the size of the POI '''
-        return self._size
-
-    def get_icon(self):
-        ''' get POI icon '''
-        return self._icon
-
-    def copy(self):
-        ''' copy point '''
-        poi = self.__class__(self._name, self._color, self._size)
-        poi.pos = self.pos
-        return poi
-
-    def __repr__(self):
-        return f'{self._name}: ({self.pos}, {self._size})'
-
-
 class EditorState:
     ''' Current state of editor '''
 
@@ -80,15 +45,17 @@ class EditorState:
 
     def set_poi(self, poi_name):
         ''' set current not yet added POI '''
+        mouse_pos = Vec(pygame.mouse.get_pos())
         if poi_name not in self._available_points:
             self._current_point = None
         else:
             self._current_point = self._available_points[poi_name]
-            self.update_poi_pos()
+            self.update_poi_pos(mouse_pos)
 
-    def update_poi_pos(self):
+    def update_poi_pos(self, mouse_pos):
         ''' update current not yet added POI position'''
-        mouse_pos = Vec(pygame.mouse.get_pos())
+        if self._current_point is None:
+            return
         self._current_point.pos = (
             mouse_pos.x-self._current_point.get_size().x/2,
             mouse_pos.y-self._current_point.get_size().y-2
@@ -119,51 +86,55 @@ class Editor:
         button_load = Button(screen, 380, 10, 60, 20, text='carregar')
         return [button_array, button_save, button_load]
 
+    def _process_click(self, mouse_pos) -> bool:
+        [_, _, right] = self._state.last_pressed_mouse
+        points = self._state.get_points()
+        poi = self._state.get_poi()
+
+        if poi is None:
+            if not right:
+                return True
+            for point in points:
+                point_rect = pygame.Rect(point.pos, point.get_size())
+                if point_rect.collidepoint(mouse_pos):
+                    self._state.remove_point(point)
+        else:
+            new_point_rect = pygame.Rect(poi.pos, poi.get_size())
+            for point in points:
+                point_rect = pygame.Rect(point.pos, poi.get_size())
+                collided_point = point_rect.colliderect(new_point_rect)
+                if collided_point:
+                    if right:
+                        self._state.remove_point(point)
+                    break
+            else:
+                new_point_rect = pygame.Rect(poi.pos, poi.get_size())
+                widgets_rects = [
+                    pygame.Rect(w.getX(), w.getY(), w.getWidth(), w.getHeight())
+                    for w in self._widgets]
+                collided_widget = sum([
+                    1 for r in widgets_rects
+                    if r.colliderect(new_point_rect)]) > 0
+                if not collided_widget:
+                    self._state.add_point(poi)
+            return True
+        return False
+
+
     def listen(self, events: List[pygame.event.Event]):
         ''' Listen for events
         Args:
             events: queue of pygame events
         '''
         mouse_pos = Vec(pygame.mouse.get_pos())
-        poi = self._state.get_poi()
-
-        if poi is not None:
-            self._state.update_poi_pos()
+        self._state.update_poi_pos(mouse_pos)
 
         for widget in self._widgets:
             widget.listen(events)
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
-                [_, _, right] = self._state.last_pressed_mouse
-                points = self._state.get_points()
-                if poi is None:
-                    if not right:
-                        break
-                    for point in points:
-                        point_rect = pygame.Rect(point.pos, point.get_size())
-                        if point_rect.collidepoint(mouse_pos):
-                            self._state.remove_point(point)
-                else:
-                    new_point_rect = pygame.Rect(poi.pos, poi.get_size())
-                    for point in points:
-                        point_rect = pygame.Rect(point.pos, poi.get_size())
-                        collided_point = point_rect.colliderect(new_point_rect)
-                        if collided_point:
-                            if right:
-                                self._state.remove_point(point)
-
-                            break
-                    else:
-                        new_point_rect = pygame.Rect(poi.pos, poi.get_size())
-                        widgets_rects = [
-                            pygame.Rect(w.getX(), w.getY(), w.getWidth(), w.getHeight())
-                            for w in self._widgets]
-                        collided_widget = sum([
-                            1 for r in widgets_rects
-                            if r.colliderect(new_point_rect)]) > 0
-                        if not collided_widget:
-                            self._state.add_point(poi)
+                if self._process_click(mouse_pos):
                     break
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self._state.last_pressed_mouse = pygame.mouse.get_pressed()
@@ -178,6 +149,7 @@ class Editor:
             screen.blit(point.get_icon(), point.pos)
         if poi is not None:
             screen.blit(poi.get_icon(), poi.pos)
+
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- SETUP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
