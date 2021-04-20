@@ -1,6 +1,9 @@
 """Module containing graphical widgets"""
 import pygame
 from pygame.math import Vector2 as Vec
+import pygame_gui
+from pygame_gui.windows.ui_file_dialog import UIFileDialog
+import pygame_widgets
 
 class Widget:
     """Generic component for graphical inteface"""
@@ -19,7 +22,7 @@ class Widget:
     def _update_surface(self):
         pass
 
-    def listen(self, evts):
+    def listen(self, evts, time_delta):
         """listen events
         Args:
             evts (list): queue of pygame.event.Event
@@ -36,6 +39,15 @@ class Widget:
     def deactivate(self):
         """Deactivate  widget."""
         self._state['active'] = False
+
+    def get_size(self) -> Vec:
+        return self._style['size']
+
+    def get_pos(self) -> Vec:
+        return self._style['pos']
+
+    def get_rect(self) -> pygame.Rect:
+        return pygame.Rect(*self._style['pos'], *self._style['size'])
 
 
 class StepperWidget(Widget):
@@ -141,7 +153,7 @@ class StepperWidget(Widget):
             pygame.draw.polygon(surface, color, [
                 (0, 0), (0, rect.h-1), (rect.w-1, (rect.h-1) // 2)])
 
-    def listen(self, evts):
+    def listen(self, evts, time_delta):
         """Process pygame events on the element
            Args:
                evts: list of pygame events.
@@ -175,3 +187,59 @@ class StepperWidget(Widget):
                 break
 
         self._update_surface()
+
+
+class ButtonArray(Widget):
+    '''especialization of ButtonArray from pygame_widgets'''
+    def __init__(self, pos, size, parent_surface, shape, **kargs):
+        super().__init__(pos, size, parent_surface)
+        self._widget = pygame_widgets.ButtonArray(
+            parent_surface, *pos, *size, shape, **kargs)
+
+    def listen(self, evts, _):
+        self._widget.listen(evts)
+
+    def draw(self):
+        self._widget.draw()
+
+class Button(Widget):
+    '''especialization of ButtonArray from pygame_widgets'''
+    def __init__(self, pos, size, parent_surface, **kargs):
+        super().__init__(pos, size, parent_surface)
+        self._widget = pygame_widgets.Button(
+            parent_surface, *pos, *size, **kargs)
+
+    def listen(self, evts, _):
+        self._widget.listen(evts)
+
+    def draw(self):
+        self._widget.draw()
+
+
+class FileExplorer(Widget):
+    ''' file explorer widget '''
+
+    def __init__(self, pos, size, parent_surface, on_select, on_cancel):
+        super().__init__(pos, size, parent_surface)
+        self._manager = pygame_gui.UIManager(parent_surface.get_size())
+        self._widget = UIFileDialog(
+            rect=pygame.Rect(pos, size), manager=self._manager)
+        self._on_select = on_select
+        self._on_cancel = on_cancel
+
+    def listen(self, evts, time_delta):
+        self._manager.update(time_delta)
+        for event in evts:
+            self._manager.process_events(event)
+            if event.type == pygame.USEREVENT:
+                if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                    if event.ui_element == self._widget.ok_button:
+                        self._on_select(self._widget.current_file_path)
+                    elif event.ui_element in (
+                        self._widget.close_window_button,
+                        self._widget.cancel_button):
+                        self._on_cancel()
+
+
+    def draw(self):
+        self._manager.draw_ui(self._parent_surface)

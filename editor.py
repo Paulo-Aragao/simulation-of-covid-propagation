@@ -3,13 +3,18 @@ Biblioteca gráfica para jogos e simulações.
 """
 from functools import partial
 from typing import List
+import csv
 import pygame
 from pygame.locals import QUIT
 from pygame.math import Vector2 as Vec
-from pygame_widgets import ButtonArray, Button
+# from pygame_widgets import Button
+import pygame_gui
+# from pygame_gui.windows.ui_file_dialog import UIFileDialog
+# from pygame_gui.elements.ui_button import UIButton
 
 from components.poi import POI
-import csv
+from components.widgets import FileExplorer, ButtonArray, Button
+# from helpers.util import prompt_file
 
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- CLASS ~-~-~-~-~-~-~-~-
@@ -74,6 +79,16 @@ class EditorState:
             writer.writerows(([point.get_name()] + list(point.pos)
                 for point in self._points))
 
+    def load(self, file_path):
+        ''' load points from file '''
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            for row in reader:
+                point = self._available_points[row[0]].copy()
+                point.pos = Vec(*[float(n) for n in row[1:]])
+                self._points.append(point)
+
 class Editor:
     ''' Simulation map editor '''
 
@@ -81,20 +96,34 @@ class Editor:
         self._screen = surface
         self._state = EditorState()
         self._widgets = self._build_widgets()
+        self._uimanager = pygame_gui.UIManager(surface.get_size())
 
     def _build_widgets(self):
         names = self._state.get_poi_names()
         on_clicks = [partial(
             self._state.set_poi, name)
             for name in names + [None]]
-        button_array = ButtonArray(screen, 100, 10, 200, 20, (len(names)+1, 1),
-            border=0, texts=(names+['nenhum']),
-            onClicks = on_clicks
-        )
-        button_save = Button(screen, 310, 10, 60, 20, text='salvar',
+        button_array = ButtonArray((100, 10), (200, 20), self._screen,
+           (len(names)+1, 1), border=0, texts=(names+['nenhum']),
+           onClicks=on_clicks)
+        button_save = Button((310, 10), (60, 20), screen, text='salvar',
             onClick=self._state.save)
-        button_load = Button(screen, 380, 10, 60, 20, text='carregar')
+        button_load = Button((380, 10), (60, 20), screen, text='carregar',
+            onClick=self._ask_for_file)
         return [button_array, button_save, button_load]
+
+    def _ask_for_file(self):
+        self._state.set_poi(None)
+        file_explorer = FileExplorer((0,0), (300, 300), self._screen,
+            on_select=self._load_file, on_cancel=self._cancel_load)
+        self._widgets.append(file_explorer)
+
+    def _load_file(self, file_path):
+        self._state.load(file_path)
+        del self._widgets[-1]
+
+    def _cancel_load(self):
+        del self._widgets[-1]
 
     def _process_click(self, mouse_pos) -> bool:
         [_, _, right] = self._state.last_pressed_mouse
@@ -118,9 +147,11 @@ class Editor:
                         self._state.remove_point(point)
                     break
             else:
+                if right:
+                    return True
                 new_point_rect = pygame.Rect(poi.pos, poi.get_size())
                 widgets_rects = [
-                    pygame.Rect(w.getX(), w.getY(), w.getWidth(), w.getHeight())
+                    w.get_rect()
                     for w in self._widgets]
                 collided_widget = sum([
                     1 for r in widgets_rects
@@ -131,7 +162,7 @@ class Editor:
         return False
 
 
-    def listen(self, events: List[pygame.event.Event]):
+    def listen(self, events: List[pygame.event.Event], time_delta_):
         ''' Listen for events
         Args:
             events: queue of pygame events
@@ -140,7 +171,7 @@ class Editor:
         self._state.update_poi_pos(mouse_pos)
 
         for widget in self._widgets:
-            widget.listen(events)
+            widget.listen(events, time_delta_)
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
@@ -153,18 +184,19 @@ class Editor:
     def draw(self):
         ''' Draw components in the screen '''
         poi = self._state.get_poi()
-        for widget in self._widgets:
-            widget.draw()
         for point in self._state.get_points():
             screen.blit(point.get_icon(), point.pos)
         if poi is not None:
             screen.blit(poi.get_icon(), poi.pos)
+        for widget in self._widgets:
+            widget.draw()
 
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- SETUP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SCREEN_SIZE = (600, 600)
 pygame.init()
-screen = pygame.display.set_mode((600, 600))
+screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption('Teste')
 clock = pygame.time.Clock()
 editor = Editor(screen)
@@ -172,12 +204,14 @@ editor = Editor(screen)
 #  ~-~-~-~-~-~-~-~- MAIN LOOP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 while True:
+    time_delta = clock.tick(30)/1000.0
     evts = pygame.event.get()
     for evt in evts:
         if evt.type == QUIT:
             pygame.quit()
     screen.fill((0,0,0))
-    editor.listen(evts)
+    # <----- DRAW AND LISTEN ------>
+    editor.listen(evts, time_delta)
     editor.draw()
+    # -----> DRAW AND LISTEN <-------
     pygame.display.update()
-    clock.tick(30)
