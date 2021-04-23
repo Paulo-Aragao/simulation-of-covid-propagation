@@ -1,2 +1,3 @@
 [TYPECHECK]
-ignored-classes=pygame.math.Vector2
+disable=too-few-public-methods
+ignored-classes=pygame.math.Vector2, components.camera.Camera

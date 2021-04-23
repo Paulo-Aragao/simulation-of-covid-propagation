@@ -115,7 +115,7 @@ class Editor:
     def _ask_for_file(self):
         self._state.set_poi(None)
         file_explorer = FileExplorer((0,0), (300, 300), self._screen,
-            on_select=self._load_file, on_cancel=self._cancel_load)
+            {'select': self._load_file, 'cancel':self._cancel_load})
         self._widgets.append(file_explorer)
 
     def _load_file(self, file_path):

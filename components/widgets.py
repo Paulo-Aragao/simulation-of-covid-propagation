@@ -219,13 +219,12 @@ class Button(Widget):
 class FileExplorer(Widget):
     ''' file explorer widget '''
 
-    def __init__(self, pos, size, parent_surface, on_select, on_cancel):
+    def __init__(self, pos, size, parent_surface, events):
         super().__init__(pos, size, parent_surface)
         self._manager = pygame_gui.UIManager(parent_surface.get_size())
         self._widget = UIFileDialog(
             rect=pygame.Rect(pos, size), manager=self._manager)
-        self._on_select = on_select
-        self._on_cancel = on_cancel
+        self._events = events
 
     def listen(self, evts, time_delta):
         self._manager.update(time_delta)
@@ -234,11 +233,13 @@ class FileExplorer(Widget):
             if event.type == pygame.USEREVENT:
                 if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                     if event.ui_element == self._widget.ok_button:
-                        self._on_select(self._widget.current_file_path)
+                        if 'select' in self._events:
+                            self._events['select'](self._widget.current_file_path)
                     elif event.ui_element in (
                         self._widget.close_window_button,
                         self._widget.cancel_button):
-                        self._on_cancel()
+                        if 'cancel' in self._events:
+                            self._events['cancel']()
 
 
     def draw(self):
