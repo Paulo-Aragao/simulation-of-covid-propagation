@@ -197,9 +197,12 @@ class Editor:
 SCREEN_SIZE = (600, 600)
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE)
+bg = pygame.Surface(SCREEN_SIZE)
 pygame.display.set_caption('Teste')
 clock = pygame.time.Clock()
 editor = Editor(screen)
+camy = 0
+y = 0
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- MAIN LOOP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -209,9 +212,16 @@ while True:
     for evt in evts:
         if evt.type == QUIT:
             pygame.quit()
+        if evt.type == pygame.KEYDOWN:
+            # If pressed key is ESC quit program
+            if evt.key == pygame.K_DOWN:
+                camy = 10
     screen.fill((0,0,0))
     # <----- DRAW AND LISTEN ------>
     editor.listen(evts, time_delta)
     editor.draw()
     # -----> DRAW AND LISTEN <-------
+    y = y + camy
+    screen.blit(bg,(200,y))
+    camy = 0
     pygame.display.update()
