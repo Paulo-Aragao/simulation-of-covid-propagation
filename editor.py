@@ -14,6 +14,7 @@ import pygame_gui
 
 from components.poi import POI
 from components.widgets import FileExplorer, ButtonArray, Button
+from components.camera import Camera, Follow
 # from helpers.util import prompt_file
 
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,6 +98,9 @@ class Editor:
         self._state = EditorState()
         self._widgets = self._build_widgets()
         self._uimanager = pygame_gui.UIManager(surface.get_size())
+        self._focus = Vec(surface.get_size()) // 2
+        self._camera = Camera(self._focus, surface.get_size())
+        self._camera.set_method(Follow(self._camera))
 
     def _build_widgets(self):
         names = self._state.get_poi_names()
@@ -138,6 +142,8 @@ class Editor:
                 if point_rect.collidepoint(mouse_pos):
                     self._state.remove_point(point)
         else:
+            poi = poi.copy()
+            poi.pos -= self._camera.offset
             new_point_rect = pygame.Rect(poi.pos, poi.get_size())
             for point in points:
                 point_rect = pygame.Rect(point.pos, poi.get_size())
@@ -161,6 +167,17 @@ class Editor:
             return True
         return False
 
+    def _process_keys(self):
+        keys = pygame.key.get_pressed()
+        offset = {
+            pygame.K_w: (0,1), pygame.K_s: (0,-1),
+            pygame.K_a: (1,0), pygame.K_d: (-1,0)
+        }
+        speed_factor = (
+            8 if keys[pygame.K_LCTRL] else 2 if keys[pygame.K_LSHIFT] else 4)
+        for key in offset:
+            if keys[key]:
+                self._focus.update(self._focus+(Vec(offset[key])*speed_factor))
 
     def listen(self, events: List[pygame.event.Event], time_delta_):
         ''' Listen for events
@@ -180,12 +197,14 @@ class Editor:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self._state.last_pressed_mouse = pygame.mouse.get_pressed()
                 break
+        self._process_keys()
 
     def draw(self):
         ''' Draw components in the screen '''
+        self._camera.scroll()
         poi = self._state.get_poi()
         for point in self._state.get_points():
-            screen.blit(point.get_icon(), point.pos)
+            screen.blit(point.get_icon(), point.pos + self._camera.offset)
         if poi is not None:
             screen.blit(poi.get_icon(), poi.pos)
         for widget in self._widgets:

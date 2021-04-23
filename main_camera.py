@@ -5,21 +5,21 @@ Teste de camera
 import pygame
 from pygame.locals import QUIT
 from pygame.math import Vector2 as Vec
-from components.camera import Canvas
+from components.camera import Camera, Follow
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- SETUP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pygame.init()
 screen = pygame.display.set_mode((600, 600))
 focus = Vec(400, 400)
-canvas = Canvas((1000, 1000), screen, focus)
+camera = Camera(focus, (1000, 1000))
+follow = Follow(camera)
+camera.set_method(follow)
 pygame.display.set_caption('Teste')
 clock = pygame.time.Clock()
 focus.update(0, 0)
 point = pygame.Surface((10, 10))
-point.fill((255, 0, 0))
-canvas.surface.blit(point, (50, 50))
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+point.fill((255, 0, 0))#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- VARIABLES ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 while True:
@@ -39,9 +39,10 @@ while True:
         if keys[key]:
             focus.update(focus+(Vec(offset[key])*SPEED_FACTOR))
     # -----> HOLD KEYS <------
+    camera.scroll()
     screen.fill((0,0,0))
     # <----- DRAW ------>
-    canvas.draw()
+    screen.blit(point, (50, 50) + camera.offset)
     # screen.blit(canvas, (0, 0))
     # -----> DRAW <------
     pygame.display.update()
