@@ -220,8 +220,8 @@ while True:
     # <----- DRAW AND LISTEN ------>
     editor.listen(evts, time_delta)
     editor.draw()
+    screen.blit(screen,(200,200)) 
     # -----> DRAW AND LISTEN <-------
-    y = y + camy
-    screen.blit(bg,(200,y))
-    camy = 0
+
     pygame.display.update()
+    
