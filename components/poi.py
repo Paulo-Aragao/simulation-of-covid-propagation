@@ -6,6 +6,8 @@ class POI:
 
     def __init__(self, name, color, size = None):
         self._size: Vec = Vec(5, 5) if size is None else Vec(size)
+        if name == 'home': 
+            self._size = Vec(10, 10)
         self._color = color
         self._icon = self._make_icon()
         self._name = name
