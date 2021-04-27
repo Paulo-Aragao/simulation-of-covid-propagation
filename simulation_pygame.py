@@ -21,7 +21,7 @@ from simulation import Simulation
 class SimulationPygame:
     ''' Simulation '''
 
-    def __init__(self, surface: pygame.Surface,infection_probability,proximity,recovery_probability,gravitation_tick):
+    def __init__(self, surface: pygame.Surface,infection_probability,proximity,recovery_probability,gravitation_tick,lockdown_strength):
         self._screen = surface
         self._widgets = self._build_widgets()
         self._uimanager = pygame_gui.UIManager(surface.get_size())
@@ -35,7 +35,7 @@ class SimulationPygame:
             home_poi.get_name(): home_poi,
             center_poi.get_name(): center_poi
         }
-        self._simulation = Simulation('output/points.csv',infection_probability,proximity,recovery_probability,gravitation_tick)
+        self._simulation = Simulation('output/points.csv',infection_probability,proximity,recovery_probability,gravitation_tick,lockdown_strength)
 
     def _build_widgets(self):
         return []
@@ -73,7 +73,7 @@ class SimulationPygame:
             screen.blit(self._available_points['home'].get_icon(), home + self._camera.offset)
         for agent in self._simulation.get_agents():
             agent_surface = pygame.Surface((5, 5))
-            if agent.situation == "safe":
+            if agent.situation == "susceptible":
                 agent_surface.fill((0, 255, 0))
             else:
                 agent_surface.fill((255, 0, 0))
@@ -91,18 +91,18 @@ pygame.display.set_caption('Teste')
 clock = pygame.time.Clock()
 #hyperparamters of SARS-CoV-2
 infection_probability = 0.04
-proximity = 0.8
-recovery_probability = 0.1
+proximity = 2
 gravitation_tick = 30
-sim = SimulationPygame(screen,infection_probability,proximity,recovery_probability,gravitation_tick)
-
-tick_day = 30
+recovery_probability = 0.1
+lockdown_strength = 0.8
+sim = SimulationPygame(screen,infection_probability,proximity,recovery_probability,gravitation_tick,lockdown_strength)
 cooldown = 30
 time = 0
+
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  ~-~-~-~-~-~-~-~- MAIN LOOP ~-~-~-~-~-~-~-~-
 #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-sim._simulation.next_step()
+sim._simulation.next_step_gravitation()
 while True:
     time_delta = clock.tick(30)/1000.0
     evts = pygame.event.get()
@@ -112,10 +112,11 @@ while True:
     screen.fill((0,0,0))
     # <----- DRAW AND LISTEN ------>
     #test moviment
+    
     time = time + 1
     if time > cooldown:
-        cooldown = cooldown + tick_day
-        sim._simulation.next_step()
+        cooldown = cooldown + sim._simulation._gravitation_tick
+        sim._simulation.next_step_gravitation()
     sim._simulation.movement_agents()
     #
     sim.listen(evts, time_delta)

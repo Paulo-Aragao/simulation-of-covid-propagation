@@ -5,6 +5,7 @@ import math
 import csv
 from scipy.stats import bernoulli
 import random
+import time
 class Agent:
     '''Unit of the simulation'''
     def __init__(self, pos, home):
@@ -12,11 +13,17 @@ class Agent:
         self.home = home
         self.pos = pos
         self.speed = 5
-        self.situation = "infected"
+        situation = None
+        if bernoulli.rvs(p=0.3, size=1)[0] == 1:
+            situation = "susceptible"
+        else:
+            situation = "infected"
+        self.situation = situation
+        self.lockdown = False
 
 class Simulation:
     '''Standalone simulation'''
-    def __init__(self, filepath,infection_probability,proximity,recovery_probability,gravitation_tick):
+    def __init__(self, filepath,infection_probability,proximity,recovery_probability,gravitation_tick,lockdown_strength):
         home_list, center_list = self._load_file()
         self._agents: List[Agent]  = self._create_agents(home_list)
         self._centers = self._create_centers(center_list)
@@ -27,6 +34,13 @@ class Simulation:
         self._proximity = proximity
         self._recovery_probability = recovery_probability
         self._gravitation_tick = gravitation_tick
+        self._gravitation_step = 0
+        self._lockdown_strength = lockdown_strength
+        #file writer
+        self._rows = []
+        #timer meditor
+        self._start_time = time.time()
+        self._end_time = time.time()
     def _load_file(self):
         file_path = 'output/points.csv'
         home_list = []
@@ -42,7 +56,7 @@ class Simulation:
         return home_list, center_list
 
     def _create_agents(self, home_list):
-        return [Agent(home, home) for home in home_list]
+        return [Agent(home, home) for home in home_list] + [Agent(home, home) for home in home_list] + [Agent(home, home) for home in home_list]
 
     def _create_centers(self, center_list):
         return [center for center in center_list]
@@ -66,17 +80,20 @@ class Simulation:
     def get_homes(self):
         return self._homes
 
-    def next_step(self):
-        for agent in self._agents:
-            agent.center = self._choose_center(agent)
-            #recovery covid
-            if agent.situation == "infected":
-                if bernoulli.rvs(p=self._recovery_probability, size=1)[0] == 1:
-                    agent.situation = "safe"
+    def next_step_gravitation(self):
+        self._gravitation_step += 1
+        if self._gravitation_step < 4:
+            for agent in self._agents:
+                agent.center = self._choose_center(agent)
+        elif self._gravitation_step < 9:
+            for agent in self._agents:
+                agent.center = agent.home
+        else:
+            self.next_day()
 
     def check_proximity_contamination(self,target_agent):
         for agent in self._agents:
-            if agent.situation == "safe" and agent is not target_agent:
+            if agent.situation == "susceptible" and agent is not target_agent:
                 if self._euclidian_distance(target_agent.pos,agent.pos) < self._proximity:
                     if bernoulli.rvs(p=self._infection_probability, size=1)[0] == 1:
                         agent.situation = "infected"
@@ -85,8 +102,9 @@ class Simulation:
             #check proximity
             if agent.situation == "infected":
                 self.check_proximity_contamination(agent)
-            angle = self.get_angle_between_points(agent.pos, agent.center)
-            agent.pos = self.move_coords_biased(agent.pos,angle,agent.speed)
+            if not agent.lockdown:
+                angle = self.get_angle_between_points(agent.pos, agent.center)
+                agent.pos = self.move_coords_biased(agent.pos,angle,agent.speed)
     def move_coords_biased(self,coords, angle, radius):
         angle_biased = self.get_angle_biased(angle, 6)
         x = radius * np.cos( angle + angle_biased )
@@ -102,3 +120,62 @@ class Simulation:
 
     def get_angle_between_points(self,p1, p2):
         return math.atan2(p2[1] - p1[1],p2[0] - p1[0])
+
+    def next_day(self):
+        self._gravitation_step = 0
+        self._end_time = time.time()
+        print(" vivos "+str(len(self._agents))+ " tempo "+ str((self._end_time - self._start_time)))
+        self._start_time = time.time()
+        for agent in self._agents:
+            agent.center = self._choose_center(agent)
+            situation = None
+            if bernoulli.rvs(p=self._lockdown_strength, size=1)[0] == 1:
+                agent.lockdown = True
+            else:
+                agent.lockdown = False
+            #recovery covid
+            if agent.situation == "infected":
+                if bernoulli.rvs(p=self._recovery_probability, size=1)[0] == 1:
+                    agent.situation = "susceptible"
+                elif bernoulli.rvs(p=0.03, size=1)[0] == 1:
+                    self._agents.remove(agent)
+        susceptiple = sum([ 1 if agent.situation == "susceptible" else 0 for agent in self._agents])
+        infected = sum([ 1 if agent.situation == "infected" else 0 for agent in self._agents])
+        lock_rate = sum([ 1 if agent.lockdown else 0 for agent in self._agents])
+        self._rows.append([len(self._agents),susceptiple,infected,lock_rate/len(self._agents)])
+        print(infected)
+    def _write_file(self):
+        with open('output/simulation_ld_0.0_ir_0.5.csv', 'w') as f:
+            # using csv.writer method from CSV package
+            write = csv.writer(f)
+            write.writerow(['POPULATION','SUSCEPTIPLES','INFECTEDS','LOCKDOWN_RATE'])
+            write.writerows(self._rows)
+
+    def run(self,days):
+        days = days*300
+        self._start_time = time.time()
+        cooldown = 0
+        time_ = 0
+        current_day = 0
+        while(current_day < days):
+            time_ = time_ + 1
+            if time_ > cooldown:
+                cooldown = cooldown + self._gravitation_tick
+                self.next_step_gravitation()
+            self.movement_agents()
+            current_day += 1
+        self._write_file()
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#  ~-~-~-~-~-~-~-~- SETUP ~-~-~-~-~-~-~-~-
+#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if __name__ == '__main__':
+    #hyperparamters of SARS-CoV-2
+    infection_probability = 0.04
+    proximity = 2
+    gravitation_tick = 30
+    recovery_probability = 0.1
+    lockdown_strength = 0.8
+    sim = Simulation('output/points.csv',infection_probability,proximity,recovery_probability,gravitation_tick,lockdown_strength)
+
+    sim.next_step_gravitation()
+    sim.run(30)
