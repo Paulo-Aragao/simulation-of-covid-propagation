@@ -1,137 +1,63 @@
 
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](img/simulation.gif)
-
-There are many great README templates available on GitHub, however, I didn't find one that really suit my needs so I created this enhanced one. I want to create a README template so amazing that it'll be the last one you ever need -- I think this is it.
-
-Here's why:
-* Your time should be focused on creating something amazing. A project that solves a problem and helps others
-* You shouldn't be doing the same tasks over and over like creating a README from scratch
-* You should element DRY principles to the rest of your life :smile:
-
-Of course, no one template will serve all projects since your needs may be different. So I'll be adding more in the near future. You may also suggest changes by forking this repo and creating a pull request or opening an issue. Thanks to all the people have have contributed to expanding this template!
-
-A list of commonly used resources that I find helpful are listed in the acknowledgements.
-
-### Built With
-
-This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-* [Bootstrap](https://getbootstrap.com)
-* [JQuery](https://jquery.com)
-* [Laravel](https://laravel.com)
 
 
+<p align="center" width="100%">
+    <img width="33%" src="img/simulation.gif"> 
+</p>
 
-<!-- GETTING STARTED -->
-## Getting Started
+## Sobre o projeto
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
 
-### Prerequisites
+Usando como o modelo matemático usado pelo [Safe blues](https://www.cell.com/patterns/fulltext/S2666-3899(21)00034-9?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2666389921000349%3Fshowall%3Dtrue#secsectitle0035), implementamos uma simulação visual de um modelo de contaminação por Covid-19.Criamos uma estrutura para representar o ambiente 2d, com auxilio de uma interface visual e interativafeita compygameessa estrutura  ́e a representa ̧c ̃ao de um mapa onde posicionamos as estruturas b ́asicas domodelo e ela armazena em um arquivo .csv suas posições em coordenadas cartesianas.  As estruturas b ́asicass ̃ao ascasas, onde podem residir um numero x de agentes, oscentrosque s ̃ao o locais que os agentes devemvisitar,  representam  locais  de  trabalho,  lojas,  shoppings  e  etc,  e  por  fim  os agentes que  representam  as pessoas.  No caso da ferramenta visual podemos posiciona apenas casas e centros, os agentes são definidos apartir das casas.
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
+### Ferramentas usadas
+
+* [Pygame](https://www.pygame.org/news)
+* [Pygame_GUI](https://pygame-gui.readthedocs.io/en/latest/)
+* [pygame-widgets](https://github.com/AustL/PygameWidgets)
+
+
+### Pre-requisitos
+
+Para executar essa simulção você deve instalar as dependencias necessarias
+* Pygame
   ```sh
-  npm install npm@latest -g
+  pip install pygame
+  ```
+* Pygame_GUI
+  ```sh
+  pip install pygame_gui -U
+  ```
+* pygame-widgets
+  ```sh
+  python -m pip install pygame-widgets
   ```
 
-### Installation
+### Instalação
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
+1. Clone este repositorio.
    ```sh
-   git clone https://github.com/your_username_/Project-Name.git
+   git clone https://github.com/Paulo-Aragao/simulation-of-covid-propagation.git
    ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```JS
-   const API_KEY = 'ENTER YOUR API';
-   ```
+2. Navegue até o diretorio simulation-of-covid-propagation
 
 
+## Executando
 
-<!-- USAGE EXAMPLES -->
-## Usage
+Para usar o editor de mapas você deve usar o comando: 
+ ```sh
+   python3 editor.py
+```
+<p align="center" width="100%">
+    <img width="33%" src="img/editor.png"> 
+</p>
+Você pode montar o mapa da simulação da maneira que quiser, usando o botão de home para adcionar casas e o botão center para adcionar um centro.
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-
-
-<!-- ROADMAP -->
-## Roadmap
-
-See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a list of proposed features (and known issues).
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-
-
-<!-- LICENSE -->
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-
-
+Para executar a simulação use o comando:
+```sh
+   python3 simulation_pygame.py
+```
 <!-- CONTACT -->
-## Contact
-
-Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
-
-Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
 
 
-
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
-* [GitHub Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet)
-* [Img Shields](https://shields.io)
-* [Choose an Open Source License](https://choosealicense.com)
-* [GitHub Pages](https://pages.github.com)
-* [Animate.css](https://daneden.github.io/animate.css)
-* [Loaders.css](https://connoratherton.com/loaders)
-* [Slick Carousel](https://kenwheeler.github.io/slick)
-* [Smooth Scroll](https://github.com/cferdinandi/smooth-scroll)
-* [Sticky Kit](http://leafo.net/sticky-kit)
-* [JVectorMap](http://jvectormap.com)
-* [Font Awesome](https://fontawesome.com)
-
-
-
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
-[contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
-[forks-url]: https://github.com/othneildrew/Best-README-Template/network/members
-[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
-[stars-url]: https://github.com/othneildrew/Best-README-Template/stargazers
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
-[issues-url]: https://github.com/othneildrew/Best-README-Template/issues
-[license-shield]: https://img.shields.io/github/license/othneildrew/Best-README-Template.svg?style=for-the-badge
-[license-url]: https://github.com/othneildrew/Best-README-Template/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/othneildrew
-[product-screenshot]: images/screenshot.png
