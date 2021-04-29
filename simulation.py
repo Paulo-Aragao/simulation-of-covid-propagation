@@ -14,7 +14,7 @@ class Agent:
         self.pos = pos
         self.speed = 5
         situation = None
-        if bernoulli.rvs(p=0.3, size=1)[0] == 1:
+        if bernoulli.rvs(p=0.8, size=1)[0] == 1:
             situation = "susceptible"
         else:
             situation = "infected"
